@@ -1,0 +1,15 @@
+users:
+  admin: admin_role
+  operator: operator_role
+  viewer: viewer_role
+
+roles:
+  admin_role:
+    - backup
+    - verify
+    - restore
+  operator_role:
+    - backup
+    - verify
+  viewer_role:
+    - verify
