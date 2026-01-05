@@ -1,12 +1,8 @@
 import argparse
-from security.user import get_current_user
-from security.policy import Policy
-from security.audit import AuditLogger
-from utils.constants import STATUS_DENY
 
-from core.backup import backup
-from core.verify import verify
-from core.restore import restore
+from utils import STATUS_DENY
+from core import backup, verify, restore
+from security import get_current_user, Policy, AuditLogger
 
 def main():
     parser = argparse.ArgumentParser()
