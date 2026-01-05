@@ -24,6 +24,7 @@ def main():
     user = get_current_user()
     policy = Policy()
     audit = AuditLogger("store/audit.log")
+    print("DEBUG USER =", user)
 
     args_str = " ".join(vars(args).values())
 

@@ -10,19 +10,19 @@ echo "=========================================="
 echo ""
 
 # Cleanup
-rm -rf test_source test_restore store
-mkdir -p test_source/subdir1/subdir2
+rm -rf dataset store store
+mkdir -p dataset/subdir1/subdir2
 
 # Tạo test data
-echo "Test file 1" > test_source/file1.txt
-echo "Test file 2" > test_source/file2.txt
-echo "Test file 3" > test_source/subdir1/file3.txt
-echo "Test file 4" > test_source/subdir1/subdir2/file4.txt
-dd if=/dev/urandom of=test_source/binary.dat bs=1M count=2 2>/dev/null
+echo "Test file 1" > dataset/file1.txt
+echo "Test file 2" > dataset/file2.txt
+echo "Test file 3" > dataset/subdir1/file3.txt
+echo "Test file 4" > dataset/subdir1/subdir2/file4.txt
+dd if=/dev/urandom of=dataset/binary.dat bs=1M count=2 2>/dev/null
 
 echo "Test 1: Basic Backup"
 echo "--------------------"
-python src/cli.py backup test_source --label "test1"
+python src/cli.py backup dataset --label "test1"
 echo ""
 
 # Lấy snapshot ID (snapshot mới nhất)
@@ -37,12 +37,12 @@ echo ""
 
 echo "Test 3: Restore Snapshot"
 echo "------------------------"
-python src/cli.py restore "$SNAP1" test_restore
+python src/cli.py restore "$SNAP1" store
 echo ""
 
 echo "Test 4: Compare Original vs Restored"
 echo "-------------------------------------"
-if diff -r test_source test_restore; then
+if diff -r dataset store; then
     echo "✓ Files match perfectly!"
 else
     echo "✗ Files don't match!"
@@ -53,7 +53,7 @@ echo ""
 echo "Test 5: Data Corruption Detection"
 echo "----------------------------------"
 # Tạo snapshot thứ 2
-python src/cli.py backup test_source --label "test2"
+python src/cli.py backup dataset --label "test2"
 SNAP2=$(ls -t store | grep -v ".log" | head -1)
 
 # Corrupt một chunk
@@ -73,7 +73,7 @@ echo "Test 6: Missing Chunk Detection"
 echo "--------------------------------"
 # Tạo snapshot thứ 3
 rm -rf store/$SNAP2  # Clean corrupted
-python src/cli.py backup test_source --label "test3"
+python src/cli.py backup dataset --label "test3"
 SNAP3=$(ls -t store | grep -v ".log" | head -1)
 
 # Xóa một chunk
@@ -93,13 +93,13 @@ echo "Test 7: Rollback Attack Detection"
 echo "----------------------------------"
 # Tạo 2 snapshots sạch
 rm -rf store
-mkdir -p test_source
-echo "Version 1" > test_source/file.txt
-python src/cli.py backup test_source --label "v1"
+mkdir -p dataset
+echo "Version 1" > dataset/file.txt
+python src/cli.py backup dataset --label "v1"
 SNAP_V1=$(ls -t store | grep -v ".log" | head -1)
 
-echo "Version 2" > test_source/file.txt
-python src/cli.py backup test_source --label "v2"
+echo "Version 2" > dataset/file.txt
+python src/cli.py backup dataset --label "v2"
 SNAP_V2=$(ls -t store | grep -v ".log" | head -1)
 
 echo "Trying to verify older snapshot (should fail)..."
@@ -122,13 +122,13 @@ echo ""
 echo "Test 8: Deduplication"
 echo "---------------------"
 # Tạo files giống nhau
-rm -rf test_source store
-mkdir test_source
-echo "Same content" > test_source/file1.txt
-echo "Same content" > test_source/file2.txt
-echo "Same content" > test_source/file3.txt
+rm -rf dataset store
+mkdir dataset
+echo "Same content" > dataset/file1.txt
+echo "Same content" > dataset/file2.txt
+echo "Same content" > dataset/file3.txt
 
-python src/cli.py backup test_source --label "dedup-test"
+python src/cli.py backup dataset --label "dedup-test"
 SNAP_DEDUP=$(ls -t store | grep -v ".log" | head -1)
 
 CHUNK_COUNT=$(ls store/$SNAP_DEDUP/chunks | wc -l)
@@ -179,13 +179,13 @@ echo ""
 
 echo "Test 10: Large File Chunking"
 echo "-----------------------------"
-rm -rf test_source store
-mkdir test_source
+rm -rf dataset store
+mkdir dataset
 
 # Tạo file 5MB (sẽ được chia thành 5 chunks 1MB)
-dd if=/dev/urandom of=test_source/large.dat bs=1M count=5 2>/dev/null
+dd if=/dev/urandom of=dataset/large.dat bs=1M count=5 2>/dev/null
 
-python src/cli.py backup test_source --label "large-file"
+python src/cli.py backup dataset --label "large-file"
 SNAP_LARGE=$(ls -t store | grep -v ".log" | head -1)
 
 CHUNK_COUNT=$(ls store/$SNAP_LARGE/chunks | wc -l)
@@ -205,12 +205,12 @@ echo "----------------------------------------"
 FIRST_CHUNK=$(ls store/$SNAP_LARGE/chunks | head -1)
 echo "corrupted" > "store/$SNAP_LARGE/chunks/$FIRST_CHUNK"
 
-rm -rf test_restore
-if python src/cli.py restore "$SNAP_LARGE" test_restore 2>&1 | grep -q "aborted"; then
+rm -rf store
+if python src/cli.py restore "$SNAP_LARGE" store 2>&1 | grep -q "aborted"; then
     echo "✓ Restore correctly aborted on failed verification!"
     
     # Verify target not created or empty
-    if [ ! -d "test_restore" ] || [ -z "$(ls -A test_restore 2>/dev/null)" ]; then
+    if [ ! -d "store" ] || [ -z "$(ls -A store 2>/dev/null)" ]; then
         echo "✓ No partial restore created!"
     else
         echo "✗ Partial restore was created!"
@@ -241,6 +241,6 @@ echo "✓ Large files are chunked properly"
 echo ""
 
 # Cleanup
-rm -rf test_source test_restore
+rm -rf dataset store
 
 echo "Test artifacts preserved in: store/"
