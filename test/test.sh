@@ -37,12 +37,14 @@ echo ""
 
 echo "Test 3: Restore Snapshot"
 echo "------------------------"
-python src/cli.py restore "$SNAP1" store
+mkdir -p restored_data
+python src/cli.py restore "$SNAP1" restored_data
 echo ""
 
 echo "Test 4: Compare Original vs Restored"
 echo "-------------------------------------"
-if diff -r dataset store; then
+# So sánh dataset gốc với thư mục vừa restore xong
+if diff -r dataset restored_data; then
     echo "✓ Files match perfectly!"
 else
     echo "✗ Files don't match!"
@@ -142,7 +144,13 @@ echo ""
 
 echo "Test 9: Audit Log Chain"
 echo "-----------------------"
+# Không cần lệnh export PYTHONPATH ở đây nữa nếu dùng cách dưới
 python -c "
+import sys
+import os
+# Chèn thư mục src vào đầu danh sách tìm kiếm module
+sys.path.insert(0, os.path.join(os.getcwd(), 'src'))
+
 from utils.hash import sha256_str
 from utils.constants import ZERO_HASH
 
@@ -154,6 +162,8 @@ valid = True
 
 for i, line in enumerate(lines):
     parts = line.strip().split()
+    if len(parts) < 2: continue # Bỏ qua dòng trống
+    
     entry_hash = parts[0]
     prev_in_entry = parts[1]
     
@@ -162,7 +172,7 @@ for i, line in enumerate(lines):
         valid = False
         break
     
-    # Verify hash
+    # Verify hash: băm phần nội dung còn lại của dòng
     raw = ' '.join(parts[1:])
     computed = sha256_str(raw)
     if computed != entry_hash:
