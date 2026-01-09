@@ -30,8 +30,9 @@ pip install -r requirements.txt
 python src/cli.py backup <source_path> --label <label>
 python src/cli.py verify <snapshot_id>
 python src/cli.py restore <snapshot_id> <target_path>
+python src/cli.py list-snapshots
+python src/cli.py cleanup
 python src/cli.py audit-verify
-python src/cli.pi cleanup
 ```
 
 Thư mục `store/` (lưu snapshot, chunk, audit, wal) sẽ **tự động được tạo khi chạy lần đầu**.
@@ -105,6 +106,10 @@ Hệ thống ngăn chặn bằng cách **chỉ chấp nhận snapshot có Merkle
 
 * Snapshot không có COMMIT được xem là **không hợp lệ**
 * Snapshot incomplete sẽ không được chấp nhận khi verify / restore
+* Snapshot directory chỉ được tạo **sau khi commit WAL** (atomic operation)
+* Backup sử dụng temp directory (`.tmp_<snapshot_id>`) để build snapshot
+* Nếu bị kill trước commit, chỉ có temp directory (dễ cleanup)
+* Tự động cleanup khi chạy `backup` hoặc `list-snapshots`
 
 ### Reproduce crash test
 
@@ -112,6 +117,7 @@ Hệ thống ngăn chặn bằng cách **chỉ chấp nhận snapshot có Merkle
 2. Kill process giữa chừng
 3. Quan sát `wal.log` có BEGIN nhưng không có COMMIT
 4. Snapshot đó không được verify / restore thành công
+5. Temp directory (`.tmp_*`) sẽ tự động bị cleanup khi chạy backup tiếp theo
 
 ---
 
@@ -132,11 +138,12 @@ roles:
 
 ### Commands hỗ trợ
 
-* `backup`
-* `verify`
-* `restore`
-* `audit-verify`
-* `list-snapshots`
+* `backup` - Tạo snapshot mới
+* `verify` - Kiểm tra toàn vẹn snapshot
+* `restore` - Phục hồi dữ liệu từ snapshot
+* `list-snapshots` - Liệt kê tất cả snapshot hợp lệ
+* `cleanup` - Dọn dẹp snapshot không commit và temp directory
+* `audit-verify` - Kiểm tra toàn vẹn audit log
 
 ### Ví dụ
 
@@ -151,12 +158,17 @@ roles:
     - backup
     - verify
     - restore
+    - list-snapshots
+    - cleanup
     - audit-verify
 
   operator:
     - backup
     - verify
     - restore
+    - list-snapshots
+    - cleanup
+    - audit-verify
 ```
 
 → Mọi OS user đều được gán `operator` nếu không khai báo cụ thể.
@@ -208,14 +220,42 @@ Cách này đảm bảo:
 
 ---
 
-## 8. Tổng kết
+## 8. Cleanup và Recovery
+
+### Tự động cleanup
+
+* Mỗi lần chạy `backup`, hệ thống tự động cleanup:
+  * Xóa các snapshot không commit (chỉ có BEGIN, không có COMMIT)
+  * Xóa các temp directory (`.tmp_*`) còn sót lại
+  * Retry rename cho snapshot đã commit nhưng chưa được rename (do crash)
+
+### Lệnh cleanup thủ công
+
+```bash
+python src/cli.py cleanup
+```
+
+Lệnh này dọn dẹp tất cả snapshot không hợp lệ và temp directory.
+
+### Lệnh list-snapshots
+
+```bash
+python src/cli.py list-snapshots
+```
+
+Liệt kê tất cả snapshot hợp lệ (đã commit). Tự động cleanup trước khi list.
+
+---
+
+## 9. Tổng kết
 
 Hệ thống đáp ứng đầy đủ yêu cầu đồ án:
 
 * Toàn vẹn dữ liệu (Merkle Tree)
 * Chống rollback
-* An toàn khi crash (WAL)
+* An toàn khi crash (WAL + temp directory)
 * Audit tamper-evident
 * Phân quyền dựa trên OS user
+* Tự động cleanup và recovery
 
 ---
