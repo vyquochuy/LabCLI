@@ -71,11 +71,20 @@ def verify(snapshot_id, store_path):
             return STATUS_FAIL
         
         # Kiểm tra rollback
+        # QUAN TRỌNG: Kiểm tra snapshot có phải là snapshot mới nhất không
+        latest_snapshot = wal.get_latest_committed_snapshot()
+        if latest_snapshot != snapshot_id:
+            print(f"Rollback attack detected! This snapshot is not the latest.")
+            print(f"  Current snapshot: {snapshot_id}")
+            print(f"  Latest snapshot: {latest_snapshot}")
+            return STATUS_FAIL
+        
+        # Kiểm tra merkle root có khớp với root cuối cùng không
         rollback = RollbackProtector(os.path.join(store_path, "roots.log"))
         rollback_status = rollback.verify_root(stored_root)
         
         if rollback_status == STATUS_FAIL:
-            print("Rollback attack detected! This snapshot is not the latest.")
+            print("Rollback attack detected! Merkle root mismatch.")
             return STATUS_FAIL
         
         # Tính lại merkle root từ chunks

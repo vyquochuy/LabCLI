@@ -54,3 +54,21 @@ class WAL:
                     committed.add(snap_id)
         
         return committed
+    
+    def get_latest_committed_snapshot(self):
+        """
+        Lấy snapshot mới nhất đã được commit
+        Trả về snapshot_id hoặc None nếu không có
+        """
+        if not os.path.exists(self.path):
+            return None
+        
+        latest = None
+        with open(self.path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("COMMIT "):
+                    snap_id = line[7:].strip()  # Bỏ "COMMIT "
+                    latest = snap_id
+        
+        return latest
