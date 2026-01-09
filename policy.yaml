@@ -1,19 +1,29 @@
 default_role: operator
 
 users:
-  admin: admin
+  alice: admin
+  bob: operator
+  eve: auditor
 
 roles:
   admin:
     - init
     - backup
+    - list-snapshots
     - verify
     - restore
     - audit-verify
-
+    - delete-snapshot
+    - purge
+    
   operator:
     - backup
+    - list-snapshots
     - verify
     - restore
+    - audit-verify
+    
+  auditor:
     - list-snapshots
+    - verify
     - audit-verify

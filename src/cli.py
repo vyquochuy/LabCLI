@@ -18,6 +18,11 @@ def main():
     r = sub.add_parser("restore")
     r.add_argument("snapshot")
     r.add_argument("target")
+    
+    # Các lệnh phụ khác để phục vụ các bài test
+    sub.add_parser("init")           # Phục vụ Test 14
+    sub.add_parser("audit-verify")   # Phục vụ Test 13
+    sub.add_parser("delete-snapshot").add_argument("snapshot")
 
     args = parser.parse_args()
 
@@ -46,3 +51,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#cli.py
