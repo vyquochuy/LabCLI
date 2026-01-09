@@ -2,6 +2,6 @@ __pycache__
 store
 dataset
 *.zip
-restored_data
+restored_data/
 restored
 test_logs
