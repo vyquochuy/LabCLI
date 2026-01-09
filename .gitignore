@@ -5,3 +5,4 @@ dataset
 restored_data/
 restored
 test_logs
+test_history/
