@@ -15,6 +15,13 @@ def list_files(root_dir: str):
     result = []
     root_dir = os.path.abspath(root_dir)
 
+    # Nếu root_dir là file đơn lẻ, trả về file đó
+    if os.path.isfile(root_dir):
+        filename = os.path.basename(root_dir)
+        result.append((filename, root_dir))
+        return result
+
+    # Nếu là thư mục, duyệt tất cả files
     for base, _, files in os.walk(root_dir):
         for name in files:
             abs_path = os.path.join(base, name)
