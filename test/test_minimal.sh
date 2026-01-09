@@ -22,7 +22,7 @@ section() {
 section "[TEST 1] Restore after deleting source"
 ########################################
 
-rm -rf dataset restored store
+rm -rf dataset restored_data store
 mkdir -p dataset/sub/a
 
 echo "hello" > dataset/file1.txt
@@ -34,10 +34,10 @@ SNAP=$(ls -t store | grep -v ".log" | head -1)
 
 log "[INFO] Deleting source and restoring"
 rm -rf dataset
-mkdir restored
-python src/cli.py restore "$SNAP" restored >> "$LOG_FILE" 2>&1
+mkdir restored_data
+python src/cli.py restore "$SNAP" restored_data >> "$LOG_FILE" 2>&1
 
-if diff -r restored restored >/dev/null; then
+if diff -r restored_data restored >/dev/null; then
     log "[PASS] Restore tree & content correct"
 else
     log "[FAIL] Restore mismatch"
