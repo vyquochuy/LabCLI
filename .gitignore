@@ -2,3 +2,4 @@ __pycache__
 store
 dataset
 *.zip
+restored_data
