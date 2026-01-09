@@ -202,7 +202,7 @@ echo ""
 rm -rf "$DATA_DIR" "$TEMP_STORE_DIR"
 mkdir -p "$DATA_DIR"
 # Tạo file đủ lớn để kịp ngắt
-dd if=/dev/urandom of="$DATA_DIR/huge.dat" bs=1M count=100 2>/dev/null
+dd if=/dev/urandom of="$DATA_DIR/huge.dat" bs=1M count=500 2>/dev/null
 
 echo "Starting backup (will be interrupted)..."
 timeout 0.5s python src/cli.py backup "$DATA_DIR" --label "interrupted" 2>/dev/null || true

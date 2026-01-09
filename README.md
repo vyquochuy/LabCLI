@@ -31,6 +31,7 @@ python src/cli.py backup <source_path> --label <label>
 python src/cli.py verify <snapshot_id>
 python src/cli.py restore <snapshot_id> <target_path>
 python src/cli.py audit-verify
+python src/cli.pi cleanup
 ```
 
 Thư mục `store/` (lưu snapshot, chunk, audit, wal) sẽ **tự động được tạo khi chạy lần đầu**.

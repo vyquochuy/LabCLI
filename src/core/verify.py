@@ -13,6 +13,7 @@ import json
 from utils.constants import STATUS_OK, STATUS_FAIL
 from utils.hash import sha256_bytes, sha256_str
 from core.rollback import RollbackProtector
+from core.wal import WAL
 
 class MerkleTree:
     def __init__(self):
@@ -45,6 +46,14 @@ def verify(snapshot_id, store_path):
         # Kiểm tra snapshot tồn tại
         if not os.path.exists(snap_dir):
             print(f"Snapshot not found: {snapshot_id}")
+            return STATUS_FAIL
+        
+        # QUAN TRỌNG: Kiểm tra WAL commit trước tiên
+        # Snapshot không có COMMIT trong WAL là snapshot tạo dở, không hợp lệ
+        wal = WAL(os.path.join(store_path, "wal.log"))
+        if not wal.is_committed(snapshot_id):
+            print(f"Snapshot not committed in WAL: {snapshot_id}")
+            print("This snapshot was not completed (may be incomplete due to crash/error)")
             return STATUS_FAIL
         
         # Đọc manifest

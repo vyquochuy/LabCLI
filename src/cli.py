@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from utils import STATUS_DENY, STATUS_OK, STATUS_FAIL
-from core import backup, verify, restore
+from core import backup, verify, restore, list_snapshots, cleanup_incomplete_snapshots
 from security import get_current_user, Policy, AuditLogger
 
 def audit_verify_command(audit_log_path):
@@ -108,6 +108,7 @@ def main():
     # Các lệnh phụ khác để test policy
     sub.add_parser("init")
     sub.add_parser("purge")
+    sub.add_parser("cleanup")
     ds = sub.add_parser("delete-snapshot")
     ds.add_argument("snapshot")
     sub.add_parser("list-snapshots")
@@ -171,11 +172,27 @@ def main():
     elif args.command == "purge":
         print("Purge command executed")
         status = STATUS_OK
+    elif args.command == "cleanup":
+        cleaned = cleanup_incomplete_snapshots("store")
+        if cleaned > 0:
+            print(f"Cleaned up {cleaned} incomplete snapshot(s)")
+        else:
+            print("No incomplete snapshots found")
+        status = STATUS_OK
     elif args.command == "delete-snapshot":
         print(f"Delete snapshot: {args.snapshot}")
         status = STATUS_OK
     elif args.command == "list-snapshots":
-        print("Listing snapshots...")
+        snapshots = list_snapshots("store")
+        if snapshots:
+            print(f"\nFound {len(snapshots)} valid snapshot(s):\n")
+            for snap in snapshots:
+                print(f"  Snapshot ID: {snap['id']}")
+                print(f"  Label: {snap['label']}")
+                print(f"  Timestamp: {snap['timestamp']}")
+                print(f"  Files: {snap['files']}")
+                print(f"  Merkle Root: {snap['merkle_root']}")
+                print()
         status = STATUS_OK
     else:
         print(f"Unknown command: {args.command}")
